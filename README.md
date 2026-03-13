@@ -46,7 +46,7 @@ Standard risk tools (used by most banks and apps) completely miss this. They ass
 
 
 
-👉 \*\*\[Open the dashboard](https://your-streamlit-url-here.streamlit.app)\*\*
+👉 (https://geopolitical-portfolio-risk-lawjxduk5cndpicq8egczk.streamlit.app/)
 
 
 
