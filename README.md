@@ -274,9 +274,10 @@ The rolling tail dependence chart shows you, over time, how the probability of j
 
 ```bash
 
-git clone https://github.com/harshinireddy2204/copula-risk-dashboard.git
+git clone https://github.com/harshinireddy2204/geopolitical-portfolio-risk.git
 
-cd copula-risk-dashboard
+
+cd geopolitical-portfolio-risk
 
 ```
 
