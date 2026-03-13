@@ -50,10 +50,6 @@ Standard risk tools (used by most banks and apps) completely miss this. They ass
 
 
 
-\*(Replace this link after deploying to Streamlit Cloud)\*
-
-
-
 \---
 
 
