@@ -102,21 +102,22 @@ def simulate_gpr_conditioned(
     pseudo_obs: pd.DataFrame,
     n_sim: int = 50_000,
 ) -> np.ndarray:
-    """
-    Simulate from the copula fitted for the CURRENT geopolitical regime.
-    current_regime: 'calm', 'elevated', or 'extreme'
-    """
     key = "crisis" if current_regime in ("elevated", "extreme") else "calm"
-    info = regime_copulas[key]
-    d    = pseudo_obs.shape[1]
-    theta = info["theta"]
+    info = regime_copulas.get(key) or regime_copulas.get("calm", {})
+    d     = pseudo_obs.shape[1]
+    theta = float(info.get("theta", 1.0) or 1.0)
+    theta = max(theta, 0.01)  # prevent division by zero
 
-    # Clayton simulation via conditional method
-    u = np.random.uniform(size=(n_sim, d))
-    v = np.random.gamma(shape=1 / theta, scale=1.0, size=n_sim)
-    exp = -np.log(u) / v[:, None]
-    samples = (1 + theta * exp) ** (-1.0 / theta)
-    return np.clip(samples, 1e-6, 1 - 1e-6)
+    try:
+        u = np.random.uniform(size=(n_sim, d))
+        v = np.random.gamma(shape=1 / theta, scale=1.0, size=n_sim)
+        v = np.where(v < 1e-10, 1e-10, v)  # prevent zero division
+        exp = -np.log(np.clip(u, 1e-10, 1)) / v[:, None]
+        samples = (1 + theta * exp) ** (-1.0 / theta)
+        return np.clip(samples, 1e-6, 1 - 1e-6)
+    except Exception as e:
+        print(f"[simulate] Clayton failed ({e}), falling back to uniform")
+        return np.random.uniform(size=(n_sim, d))
 
 
 def compute_regime_shift(regime_copulas: dict) -> dict:

@@ -3,13 +3,14 @@ import pandas as pd
 from scipy.stats import norm
 
 def invert_to_returns(u_sim, returns_df):
-    """
-    Convert uniform simulations back to return space
-    using empirical quantile inversion.
-    """
+    if u_sim is None or u_sim.shape[0] == 0:
+        # Fallback: return zeros shaped correctly
+        return np.zeros((1, len(returns_df.columns)))
     sim_returns = np.zeros_like(u_sim)
     for i, col in enumerate(returns_df.columns):
-        empirical = np.sort(returns_df[col].values)
+        empirical = np.sort(returns_df[col].dropna().values)
+        if len(empirical) == 0:
+            continue
         quantiles = np.linspace(0, 1, len(empirical))
         sim_returns[:, i] = np.interp(u_sim[:, i], quantiles, empirical)
     return sim_returns
