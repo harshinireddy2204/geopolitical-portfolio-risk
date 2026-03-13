@@ -7,11 +7,22 @@ def _cholesky_safe(corr: np.ndarray) -> np.ndarray:
     """Return a PSD correlation matrix safe for Cholesky decomposition."""
     corr = (corr + corr.T) / 2
     np.fill_diagonal(corr, 1.0)
-    eigvals = np.linalg.eigvalsh(corr)
-    if eigvals.min() < 1e-8:
-        corr += np.eye(corr.shape[0]) * (abs(eigvals.min()) + 1e-6)
+    # Replace any NaN/Inf that cause convergence failure
+    corr = np.nan_to_num(corr, nan=0.0, posinf=1.0, neginf=-1.0)
+    np.fill_diagonal(corr, 1.0)
+    # Use SVD instead of eigvalsh — more stable on near-singular matrices
+    try:
+        U, s, Vt = np.linalg.svd(corr)
+        s = np.maximum(s, 1e-6)
+        corr = U @ np.diag(s) @ Vt
+        # Re-normalise to valid correlation matrix
         d = np.sqrt(np.diag(corr))
+        d = np.where(d < 1e-10, 1.0, d)
         corr = corr / np.outer(d, d)
+    except np.linalg.LinAlgError:
+        # Last resort: identity-blend
+        corr = 0.5 * corr + 0.5 * np.eye(corr.shape[0])
+    np.fill_diagonal(corr, 1.0)
     return corr
 
 
@@ -39,13 +50,14 @@ def fit_regime_copulas(
     results = {}
 
     for regime in ("calm", "crisis"):
-        mask = (regime_labels == regime).values
-        # Align mask length to pseudo_obs (pseudo_obs may be shorter due to GARCH burn-in)
-        mask = mask[-len(u_all):]
+        # Align regime labels to pseudo_obs length safely
+        aligned = regime_labels.reindex(
+            regime_labels.index[-len(u_all):]
+        ).fillna("calm")
+        mask = (aligned == regime).values
         u = u_all[mask]
 
         if len(u) < 30:
-            # Not enough data — use full sample as fallback
             u = u_all
 
         d = u.shape[1]
