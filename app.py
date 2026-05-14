@@ -158,8 +158,9 @@ progress.progress(50, text="Building calm/crisis regime labels...")
 # Align GPR to returns index
 gpr_aligned = (
     gpr_df.set_index("date")["gpr"]
-    .reindex(returns.index, method="ffill")
-    .fillna(method="bfill")
+    .reindex(returns.index)
+    .ffill()
+    .bfill()
 )
 regime_labels = classify_gpr_regime(gpr_aligned)
 
